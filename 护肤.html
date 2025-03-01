@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>品牌产品介绍</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .brand-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 50px;
+        }
+        .brand-container img {
+            width: 150px;
+            height: 150px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+        }
+        .brand-container img:hover {
+            transform: scale(1.1);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 50%;
+            border-radius: 10px;
+            text-align: left;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: #000;
+        }
+        .product-info {
+            margin-top: 20px;
+        }
+        .product-info p {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="brand-container">
+        <img src="https://via.placeholder.com/150?text=可复美" alt="可复美" onclick="openModal('可复美')">
+        <img src="https://via.placeholder.com/150?text=敷尔佳" alt="敷尔佳" onclick="openModal('敷尔佳')">
+        <img src="https://via.placeholder.com/150?text=相宜本草" alt="相宜本草" onclick="openModal('相宜本草')">
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modal-title"></h2>
+            <div class="product-info">
+                <p id="modal-description"></p>
+                <p id="modal-price"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const products = {
+            '可复美': {
+                description: '可复美是一个专注于护肤品的品牌，主打修复和保湿产品，适合各种肤质使用。明星产品包括修复面膜和保湿精华液。',
+                price: '价格：修复面膜 ￥199，保湿精华液 ￥299'
+            },
+            '敷尔佳': {
+                description: '敷尔佳是一个知名的面膜品牌，产品以高效保湿和修复功能著称，深受消费者喜爱。明星产品包括玻尿酸面膜和胶原蛋白面膜。',
+                price: '价格：玻尿酸面膜 ￥159，胶原蛋白面膜 ￥179'
+            },
+            '相宜本草': {
+                description: '相宜本草是一个以中草药为基础的护肤品牌，产品天然温和，适合敏感肌肤使用。明星产品包括红景天系列和四倍蚕丝面膜。',
+                price: '价格：红景天精华 ￥129，四倍蚕丝面膜 ￥89'
+            }
+        };
+
+        function openModal(brand) {
+            const modal = document.getElementById('modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalDescription = document.getElementById('modal-description');
+            const modalPrice = document.getElementById('modal-price');
+
+            modal.style.display = 'block';
+            modalTitle.textContent = brand;
+            modalDescription.textContent = products[brand].description;
+            modalPrice.textContent = products[brand].price;
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modal');
+            modal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+
+</body>
+</html>
