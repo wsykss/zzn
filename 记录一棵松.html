@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一棵松的生活日记</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: pink; /* 粉色背景 */
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+        h1 {
+            font-size: 36px;
+            color: #333;
+            margin-top: 20px;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            margin-top: 30px;
+        }
+        .category {
+            width: 45%;
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        .category:hover {
+            transform: scale(1.05);
+        }
+        .category h2 {
+            font-size: 24px;
+            color: #555;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 50%;
+            text-align: left;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: #000;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #ff69b4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #ff1493;
+        }
+        .saved-content {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>一棵松的生活日记</h1>
+
+    <div class="container">
+        <div class="category" onclick="openModal('衣服支出')">
+            <h2>衣服支出</h2>
+            <div id="clothes-content" class="saved-content"></div>
+        </div>
+        <div class="category" onclick="openModal('吃饭支出')">
+            <h2>吃饭支出</h2>
+            <div id="food-content" class="saved-content"></div>
+        </div>
+        <div class="category" onclick="openModal('娱乐支出')">
+            <h2>娱乐支出</h2>
+            <div id="entertainment-content" class="saved-content"></div>
+        </div>
+        <div class="category" onclick="openModal('学习支出')">
+            <h2>学习支出</h2>
+            <div id="study-content" class="saved-content"></div>
+        </div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modal-title"></h2>
+            <textarea id="modal-input" placeholder="在这里输入你的记录..."></textarea>
+            <button onclick="saveContent()">保存</button>
+            <div id="modal-saved-content" class="saved-content"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentCategory = '';
+
+        function openModal(category) {
+            currentCategory = category;
+            const modal = document.getElementById('modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalSavedContent = document.getElementById('modal-saved-content');
+
+            modal.style.display = 'block';
+            modalTitle.textContent = category;
+
+            // 显示已保存的内容
+            const savedContent = document.getElementById(`${category.toLowerCase().replace(' ', '-')}-content`).innerHTML;
+            modalSavedContent.innerHTML = savedContent;
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modal');
+            modal.style.display = 'none';
+        }
+
+        function saveContent() {
+            const input = document.getElementById('modal-input').value;
+            if (input.trim() === '') {
+                alert('请输入内容！');
+                return;
+            }
+
+            const savedContentDiv = document.getElementById(`${currentCategory.toLowerCase().replace(' ', '-')}-content`);
+            savedContentDiv.innerHTML += `<p>${input}</p>`;
+
+            // 清空输入框
+            document.getElementById('modal-input').value = '';
+
+            // 更新弹窗中的已保存内容
+            const modalSavedContent = document.getElementById('modal-saved-content');
+            modalSavedContent.innerHTML = savedContentDiv.innerHTML;
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
+
+</body>
+</html>
