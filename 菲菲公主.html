@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>菲菲公主的账单日记</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+            color: #fff;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            font-size: 3em;
+            margin: 20px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 20px;
+        }
+        .month {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            margin: 10px;
+            padding: 20px;
+            width: 200px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        .month:hover {
+            transform: scale(1.1);
+        }
+        .month h2 {
+            font-size: 1.5em;
+            margin: 0;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            width: 300px;
+            text-align: left;
+            color: #333;
+        }
+        .modal-content h2 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        .modal-content input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .modal-content button {
+            background: #ff6f61;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .modal-content button:hover {
+            background: #ff3b2f;
+        }
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #ff6f61;
+            animation: fall 5s linear infinite;
+        }
+        @keyframes fall {
+            0% { top: -10%; transform: rotate(0deg); }
+            100% { top: 110%; transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>菲菲公主的账单日记</h1>
+    <div class="container">
+        <div class="month" onclick="openModal('一月')"><h2>一月</h2></div>
+        <div class="month" onclick="openModal('二月')"><h2>二月</h2></div>
+        <div class="month" onclick="openModal('三月')"><h2>三月</h2></div>
+        <div class="month" onclick="openModal('四月')"><h2>四月</h2></div>
+        <div class="month" onclick="openModal('五月')"><h2>五月</h2></div>
+        <div class="month" onclick="openModal('六月')"><h2>六月</h2></div>
+        <div class="month" onclick="openModal('七月')"><h2>七月</h2></div>
+        <div class="month" onclick="openModal('八月')"><h2>八月</h2></div>
+        <div class="month" onclick="openModal('九月')"><h2>九月</h2></div>
+        <div class="month" onclick="openModal('十月')"><h2>十月</h2></div>
+        <div class="month" onclick="openModal('十一月')"><h2>十一月</h2></div>
+        <div class="month" onclick="openModal('十二月')"><h2>十二月</h2></div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h2 id="modal-title"></h2>
+            <label for="clothes">衣服支出:</label>
+            <input type="number" id="clothes" placeholder="输入金额">
+            <label for="entertainment">娱乐支出:</label>
+            <input type="number" id="entertainment" placeholder="输入金额">
+            <label for="food">吃饭支出:</label>
+            <input type="number" id="food" placeholder="输入金额">
+            <label for="notes">备注:</label>
+            <input type="text" id="notes" placeholder="记录你想记录的内容">
+            <button onclick="saveData()">保存</button>
+            <button onclick="closeModal()">关闭</button>
+        </div>
+    </div>
+
+    <script>
+        function openModal(month) {
+            document.getElementById('modal-title').innerText = month;
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        function saveData() {
+            const month = document.getElementById('modal-title').innerText;
+            const clothes = document.getElementById('clothes').value;
+            const entertainment = document.getElementById('entertainment').value;
+            const food = document.getElementById('food').value;
+            const notes = document.getElementById('notes').value;
+
+            alert(`保存成功！\n月份: ${month}\n衣服支出: ${clothes}\n娱乐支出: ${entertainment}\n吃饭支出: ${food}\n备注: ${notes}`);
+            closeModal();
+        }
+
+        // 创建动态图案
+        for (let i = 0; i < 50; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.animationDuration = Math.random() * 3 + 2 + 's';
+            confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 75%)`;
+            document.body.appendChild(confetti);
+        }
+    </script>
+</body>
+</html>
