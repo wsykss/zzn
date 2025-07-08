@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B站热门视频数据分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #00a1d6, #b8d9f5);
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .chart-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .chart-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #00a1d6;
+            border-left: 4px solid #00a1d6;
+            padding-left: 10px;
+        }
+        .chart {
+            width: 100%;
+            height: 400px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+        .data-table th, .data-table td {
+        border: 1px solid #ddd;
+        padding: 8px 12px;
+        text-align: left;
+        white-space: normal;  /* 允许换行 */
+        word-break: break-all; /* 强制长单词/URL换行 */
+        max-width: 200px; /* 设置单元格最大宽度 */
+    }
+        /* 特别处理链接列 */
+        .data-table td:last-child {
+        max-width: 150px; /* 链接列更窄 */
+    }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 15px;
+            color: #666;
+            font-size: 14px;
+        }
+        .full-width {
+            grid-column: 1 / -1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>B站热门视频数据分析</h1>
+            <p>基于B站热门视频数据的可视化分析</p>
+        </div>
+
+        <div class="grid">
+            <div class="chart-container">
+                <div class="chart-title">播放量分布</div>
+                <div id="viewChart" class="chart"></div>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">视频互动指标对比</div>
+                <div id="interactionChart" class="chart"></div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">播放量TOP10视频</div>
+            <div id="top10Chart" class="chart" style="height: 500px;"></div>
+        </div>
+
+        <div class="grid">
+            <div class="chart-container">
+                <div class="chart-title">UP主投稿数量TOP10</div>
+                <div id="upChart" class="chart"></div>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">视频发布时间分布</div>
+                <div id="hourChart" class="chart"></div>
+            </div>
+        </div>
+
+        <div class="chart-container full-width">
+            <div class="chart-title">播放量与互动指标相关性</div>
+            <div id="correlationChart" class="chart" style="height: 500px;"></div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">原始数据表格</div>
+            <div id="dataTable"></div>
+        </div>
+
+        <div class="footer">
+            <p>数据更新时间: <span id="updateTime"></span> | 数据来源: Bilibili热门视频</p>
+        </div>
+    </div>
+
+    <script>
+        // 设置更新时间
+        document.getElementById('updateTime').textContent = new Date().toLocaleString();
+
+        // 加载JSON数据
+        Promise.all([
+            $.getJSON('view_stats.json'),
+            $.getJSON('top10_views.json'),
+            $.getJSON('interaction_stats.json'),
+            $.getJSON('up_stats.json'),
+            $.getJSON('hour_dist.json'),
+            $.getJSON('correlation_data.json'),
+            $.getJSON('bilibili_hot.json')  // 原始数据
+        ]).then(function(data) {
+            const [viewData, top10Data, interactionData, upData, hourData, correlationData, rawData] = data;
+            
+            // 1. 播放量分布
+            const viewChart = echarts.init(document.getElementById('viewChart'));
+            viewChart.setOption({
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b}: {c} ({d}%)'
+                },
+                legend: {
+                    orient: 'vertical',
+                    right: 10,
+                    top: 'center',
+                    data: viewData.map(item => item.播放量区间)
+                },
+                series: [{
+                    name: '播放量分布',
+                    type: 'pie',
+                    radius: ['50%', '70%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: {
+                        borderRadius: 10,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    label: {
+                        show: false,
+                        position: 'center'
+                    },
+                    emphasis: {
+                        label: {
+                            show: true,
+                            fontSize: '18',
+                            fontWeight: 'bold'
+                        }
+                    },
+                    labelLine: {
+                        show: false
+                    },
+                    data: viewData.map(item => ({
+                        value: item.视频数量,
+                        name: item.播放量区间
+                    }))
+                }]
+            });
+
+            // 2. 播放量TOP10视频
+            const top10Chart = echarts.init(document.getElementById('top10Chart'));
+            top10Chart.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    },
+                    formatter: function(params) {
+                        const data = params[0].data;
+                        return `标题: ${data.title}<br/>
+                                UP主: ${data.up}<br/>
+                                播放量: ${data.value.toLocaleString()}<br/>
+                                弹幕数: ${data.danmaku.toLocaleString()}<br/>
+                                点赞数: ${data.like.toLocaleString()}`;
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'value',
+                    name: '播放量'
+                },
+                yAxis: {
+                    type: 'category',
+                    data: top10Data.map(item => item.标题.substring(0, 20) + (item.标题.length > 20 ? '...' : '')),
+                    axisLabel: {
+                        interval: 0,
+                        fontSize: 10
+                    }
+                },
+                series: [{
+                    name: '播放量',
+                    type: 'bar',
+                    data: top10Data.map(item => ({
+                        value: item.播放量,
+                        title: item.标题,
+                        up: item.UP主,
+                        danmaku: item.弹幕数,
+                        like: item.点赞数
+                    })),
+                    itemStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                            { offset: 0, color: '#83bff6' },
+                            { offset: 0.5, color: '#188df0' },
+                            { offset: 1, color: '#0077e6' }
+                        ])
+                    }
+                }]
+            });
+
+            // 3. 视频互动指标对比
+            const interactionChart = echarts.init(document.getElementById('interactionChart'));
+            interactionChart.setOption({
+                tooltip: {
+                    trigger: 'item'
+                },
+                radar: {
+                    indicator: interactionData.map(item => ({
+                        name: item.指标,
+                        max: Math.max(...interactionData.map(i => i.总值)) * 1.2
+                    })),
+                    radius: '65%'
+                },
+                series: [{
+                    name: '互动指标',
+                    type: 'radar',
+                    data: [{
+                        value: interactionData.map(item => item.总值),
+                        name: '互动量',
+                        areaStyle: {
+                            color: 'rgba(255, 145, 124, 0.4)'
+                        },
+                        lineStyle: {
+                            color: 'rgba(255, 145, 124, 0.8)'
+                        }
+                    }]
+                }]
+            });
+
+            // 4. UP主投稿数量TOP10
+            const upChart = echarts.init(document.getElementById('upChart'));
+            const top10Up = upData.sort((a, b) => b.投稿数量 - a.投稿数量).slice(0, 10);
+            upChart.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    }
+                },
+                xAxis: {
+                    type: 'category',
+                    data: top10Up.map(item => item.UP主),
+                    axisLabel: {
+                        interval: 0,
+                        rotate: 30
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '投稿数量'
+                },
+                series: [{
+                    name: '投稿数量',
+                    type: 'bar',
+                    data: top10Up.map(item => item.投稿数量),
+                    itemStyle: {
+                        color: function(params) {
+                            const colorList = ['#9a60b4', '#ea7ccc', '#67e0e3', '#37a2da', '#32c5e9', '#b6a2de', '#e062ae', '#e690d1', '#e7bcf3', '#9d96f5'];
+                            return colorList[params.dataIndex % colorList.length];
+                        }
+                    }
+                }]
+            });
+
+            // 5. 视频发布时间分布
+            const hourChart = echarts.init(document.getElementById('hourChart'));
+            hourChart.setOption({
+                tooltip: {
+                    trigger: 'axis'
+                },
+                xAxis: {
+                    type: 'category',
+                    data: hourData.map(item => item.小时 + ':00'),
+                    boundaryGap: false
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '视频数量'
+                },
+                series: [{
+                    name: '视频数量',
+                    type: 'line',
+                    data: hourData.map(item => item.视频数量),
+                    smooth: true,
+                    lineStyle: {
+                        width: 4,
+                        color: '#37a2da'
+                    },
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(55, 162, 218, 0.8)' },
+                            { offset: 1, color: 'rgba(55, 162, 218, 0.1)' }
+                        ])
+                    }
+                }]
+            });
+
+            // 6. 播放量与互动指标相关性
+            const correlationChart = echarts.init(document.getElementById('correlationChart'));
+            const indicators = correlationData.filter(item => item.index === '播放量')[0];
+            const dimensions = Object.keys(indicators).filter(key => key !== 'index');
+            
+            correlationChart.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    }
+                },
+                radar: {
+                    indicator: dimensions.map(name => ({
+                        name: name,
+                        max: 1,
+                        min: -1
+                    }))
+                },
+                series: [{
+                    name: '相关系数',
+                    type: 'radar',
+                    data: [{
+                        value: dimensions.map(name => indicators[name]),
+                        name: '与播放量的相关性',
+                        areaStyle: {
+                            opacity: 0.2
+                        }
+                    }]
+                }]
+            });
+
+            // 7. 原始数据表格
+            const tableHtml = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            ${Object.keys(rawData[0]).map(key => `<th>${key}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rawData.map(item => `
+                            <tr>
+                                ${Object.values(item).map(val => `<td>${val}</td>`).join('')}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('dataTable').innerHTML = tableHtml;
+
+            // 窗口大小变化时重新调整图表大小
+            window.addEventListener('resize', function() {
+                viewChart.resize();
+                top10Chart.resize();
+                interactionChart.resize();
+                upChart.resize();
+                hourChart.resize();
+                correlationChart.resize();
+            });
+        }).catch(function(error) {
+            console.error('加载数据失败:', error);
+            document.getElementById('dataTable').innerHTML = '<p style="color:red;">加载数据失败，请检查数据文件是否存在</p>';
+        });
+    </script>
+</body>
+</html>
