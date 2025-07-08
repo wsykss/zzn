@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bilibili热门视频数据分析平台</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #00a1d6;
+            --secondary-color: #f25d8e;
+            --dark-color: #222;
+            --light-color: #f8f9fa;
+            --gray-color: #6c757d;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #00a1d6, #0066cc);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            box-shadow: var(--box-shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 L100,0 L100,100 L0,100 Z" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/></svg>');
+            opacity: 0.3;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            font-size: 2rem;
+            color: white;
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .last-update {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 20px;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--dark-color);
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(0, 161, 214, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+        }
+
+        .stat-card {
+            grid-column: span 3;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 0.5rem 0;
+        }
+
+        .stat-label {
+            color: var(--gray-color);
+            font-size: 0.9rem;
+        }
+
+        .chart-card {
+            grid-column: span 6;
+            height: 350px;
+        }
+
+        .table-card {
+            grid-column: span 12;
+        }
+
+        .half-card {
+            grid-column: span 6;
+            height: 400px;
+        }
+
+        .full-card {
+            grid-column: span 12;
+            height: 500px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: 500;
+            color: var(--gray-color);
+        }
+
+        tr:hover {
+            background-color: #f5f7fa;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25em 0.6em;
+            font-size: 0.75em;
+            font-weight: 500;
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: 10px;
+        }
+
+        .badge-primary {
+            background-color: rgba(0, 161, 214, 0.1);
+            color: var(--primary-color);
+        }
+
+        .badge-secondary {
+            background-color: rgba(242, 93, 142, 0.1);
+            color: var(--secondary-color);
+        }
+
+        .badge-success {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: var(--success-color);
+        }
+
+        .video-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .video-link:hover {
+            color: #0077b3;
+            text-decoration: underline;
+        }
+
+        .up-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 8px;
+            object-fit: cover;
+        }
+
+        .up-name {
+            display: flex;
+            align-items: center;
+        }
+
+        .correlation-matrix {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 5px;
+            margin-top: 20px;
+        }
+
+        .correlation-cell {
+            padding: 10px;
+            text-align: center;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        footer {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 2rem 0;
+            margin-top: 3rem;
+            text-align: center;
+        }
+
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .social-links a {
+            color: white;
+            font-size: 1.2rem;
+            transition: var(--transition);
+        }
+
+        .social-links a:hover {
+            color: var(--primary-color);
+        }
+
+        .copyright {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        @media (max-width: 992px) {
+            .stat-card {
+                grid-column: span 6;
+            }
+            .chart-card {
+                grid-column: span 12;
+            }
+            .half-card {
+                grid-column: span 12;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stat-card {
+                grid-column: span 12;
+            }
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <div class="logo">
+                <i class="fab fa-bilibili"></i>
+                <h1>Bilibili热门视频数据分析平台</h1>
+            </div>
+            <div class="last-update" id="lastUpdate">最后更新时间: 加载中...</div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="dashboard">
+            <!-- 数据概览卡片 -->
+            <div class="card stat-card">
+                <div class="card-header">
+                    <h2 class="card-title">视频总数</h2>
+                    <div class="card-icon">
+                        <i class="fas fa-video"></i>
+                    </div>
+                </div>
+                <div class="stat-value" id="totalVideos">100</div>
+                <div class="stat-label">当前分析的热门视频数量</div>
+            </div>
+
+            <div class="card stat-card">
+                <div class="card-header">
+                    <h2 class="card-title">总播放量</h2>
+                    <div class="card-icon">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                </div>
+                <div class="stat-value" id="totalViews">0</div>
+                <div class="stat-label">所有视频播放量总和</div>
+            </div>
+
+            <div class="card stat-card">
+                <div class="card-header">
+                    <h2 class="card-title">总互动量</h2>
+                    <div class="card-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                </div>
+                <div class="stat-value" id="totalInteractions">0</div>
+                <div class="stat-label">点赞、评论、弹幕等总和</div>
+            </div>
+
+            <div class="card stat-card">
+                <div class="card-header">
+                    <h2 class="card-title">UP主数量</h2>
+                    <div class="card-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                <div class="stat-value" id="totalUps">0</div>
+                <div class="stat-label">参与创作的UP主数量</div>
+            </div>
+
+            <!-- 播放量分布 -->
+            <div class="card chart-card">
+                <div class="card-header">
+                    <h2 class="card-title">播放量分布</h2>
+                    <div class="card-icon">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                </div>
+                <div id="viewDistributionChart" style="height: calc(100% - 60px);"></div>
+            </div>
+
+            <!-- 发布时间分布 -->
+            <div class="card chart-card">
+                <div class="card-header">
+                    <h2 class="card-title">发布时间分布</h2>
+                    <div class="card-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+                <div id="hourDistributionChart" style="height: calc(100% - 60px);"></div>
+            </div>
+
+            <!-- 播放量TOP10视频 -->
+            <div class="card table-card">
+                <div class="card-header">
+                    <h2 class="card-title">播放量TOP10视频</h2>
+                    <div class="card-icon">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table id="top10Table">
+                        <thead>
+                            <tr>
+                                <th>排名</th>
+                                <th>视频标题</th>
+                                <th>UP主</th>
+                                <th>播放量</th>
+                                <th>弹幕数</th>
+                                <th>点赞数</th>
+                                <th>互动率</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 互动指标分析 -->
+            <div class="card half-card">
+                <div class="card-header">
+                    <h2 class="card-title">互动指标分析</h2>
+                    <div class="card-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                </div>
+                <div id="interactionChart" style="height: calc(100% - 60px);"></div>
+            </div>
+
+            <!-- UP主投稿数量TOP10 -->
+            <div class="card half-card">
+                <div class="card-header">
+                    <h2 class="card-title">UP主投稿数量TOP10</h2>
+                    <div class="card-icon">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                </div>
+                <div id="upStatsChart" style="height: calc(100% - 60px);"></div>
+            </div>
+
+            <!-- 相关性分析 -->
+            <div class="card full-card">
+                <div class="card-header">
+                    <h2 class="card-title">播放量与互动指标相关性分析</h2>
+                    <div class="card-icon">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                </div>
+                <div id="correlationChart" style="height: calc(100% - 60px);"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container footer-content">
+            <div class="social-links">
+                <a href="#"><i class="fab fa-github"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-bilibili"></i></a>
+                <a href="#"><i class="fab fa-youtube"></i></a>
+            </div>
+            <div class="copyright">
+                &copy; 2023 Bilibili数据分析平台 | 数据仅供参考，非官方数据
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 加载JSON数据
+        Promise.all([
+            fetch('bilibili_hot.json').then(res => res.json()),
+            fetch('view_stats.json').then(res => res.json()),
+            fetch('top10_views.json').then(res => res.json()),
+            fetch('interaction_stats.json').then(res => res.json()),
+            fetch('up_stats.json').then(res => res.json()),
+            fetch('hour_dist.json').then(res => res.json()),
+            fetch('correlation_data.json').then(res => res.json())
+        ]).then(([hotData, viewStats, top10Views, interactionStats, upStats, hourDist, correlationData]) => {
+            // 设置最后更新时间
+            document.getElementById('lastUpdate').textContent = `最后更新时间: ${new Date().toLocaleString()}`;
+            
+            // 计算统计数据
+            const totalViews = hotData.reduce((sum, video) => sum + video.播放量, 0);
+            const totalInteractions = hotData.reduce((sum, video) => {
+                return sum + video.弹幕数 + video.点赞数 + video.收藏数 + video.硬币数 + video.分享数 + video.评论数;
+            }, 0);
+            const uniqueUps = [...new Set(hotData.map(video => video.UP主))].length;
+            
+            // 更新概览卡片
+            document.getElementById('totalVideos').textContent = hotData.length;
+            document.getElementById('totalViews').textContent = (totalViews / 10000).toFixed(1) + '万';
+            document.getElementById('totalInteractions').textContent = (totalInteractions / 10000).toFixed(1) + '万';
+            document.getElementById('totalUps').textContent = uniqueUps;
+            
+            // 1. 播放量分布图表
+            const viewDistributionChart = echarts.init(document.getElementById('viewDistributionChart'));
+            viewDistributionChart.setOption({
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b}: {c} ({d}%)'
+                },
+                legend: {
+                    orient: 'vertical',
+                    right: 10,
+                    top: 'center',
+                    data: viewStats.map(item => item.播放量区间)
+                },
+                series: [
+                    {
+                        name: '播放量分布',
+                        type: 'pie',
+                        radius: ['50%', '70%'],
+                        avoidLabelOverlap: false,
+                        itemStyle: {
+                            borderRadius: 10,
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        },
+                        label: {
+                            show: false,
+                            position: 'center'
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: '18',
+                                fontWeight: 'bold'
+                            }
+                        },
+                        labelLine: {
+                            show: false
+                        },
+                        data: viewStats.map(item => ({
+                            value: item.视频数量,
+                            name: item.播放量区间
+                        }))
+                    }
+                ]
+            });
+            
+            // 2. 发布时间分布图表
+            const hourDistributionChart = echarts.init(document.getElementById('hourDistributionChart'));
+            hourDistributionChart.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    }
+                },
+                xAxis: {
+                    type: 'category',
+                    data: hourDist.map(item => `${item.小时}:00`),
+                    axisLabel: {
+                        interval: 0,
+                        rotate: 45
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '视频数量'
+                },
+                series: [
+                    {
+                        name: '视频数量',
+                        type: 'bar',
+                        data: hourDist.map(item => item.视频数量),
+                        itemStyle: {
+                            color: function(params) {
+                                const colorList = ['#5470C6', '#91CC75', '#FAC858', '#EE6666', '#73C0DE', '#3BA272', '#FC8452', '#9A60B4', '#EA7CCC'];
+                                return colorList[params.dataIndex % colorList.length];
+                            }
+                        }
+                    }
+                ]
+            });
+            
+            // 3. 播放量TOP10表格
+            const top10TableBody = document.querySelector('#top10Table tbody');
+            top10Views.forEach((video, index) => {
+                const interactionRate = ((video.弹幕数 + video.点赞数) / video.播放量 * 100).toFixed(2);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td><a href="${video.视频链接 || 'https://www.bilibili.com'}" class="video-link" target="_blank">${video.标题}</a></td>
+                    <td class="up-name">
+                        <span>${video.UP主}</span>
+                    </td>
+                    <td>${(video.播放量 / 10000).toFixed(1)}万</td>
+                    <td>${video.弹幕数}</td>
+                    <td>${video.点赞数}</td>
+                    <td><span class="badge ${interactionRate > 5 ? 'badge-success' : interactionRate > 2 ? 'badge-primary' : 'badge-secondary'}">${interactionRate}%</span></td>
+                `;
+                top10TableBody.appendChild(row);
+            });
+            
+            // 4. 互动指标图表
+            const interactionChart = echarts.init(document.getElementById('interactionChart'));
+            interactionChart.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    }
+                },
+                xAxis: {
+                    type: 'category',
+                    data: interactionStats.map(item => item.指标),
+                    axisLabel: {
+                        interval: 0
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '数量'
+                },
+                series: [
+                    {
+                        name: '互动量',
+                        type: 'bar',
+                        data: interactionStats.map(item => item.总值),
+                        itemStyle: {
+                            color: function(params) {
+                                const colorList = ['#00a1d6', '#f25d8e', '#ffc107', '#28a745', '#6f42c1', '#fd7e14'];
+                                return colorList[params.dataIndex % colorList.length];
+                            }
+                        }
+                    }
+                ]
+            });
+            
+            // 5. UP主投稿数量图表
+            const upStatsChart = echarts.init(document.getElementById('upStatsChart'));
+            const top10Ups = upStats.slice(0, 10);
+            upStatsChart.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    }
+                },
+                xAxis: {
+                    type: 'value',
+                    name: '投稿数量'
+                },
+                yAxis: {
+                    type: 'category',
+                    data: top10Ups.map(item => item.UP主),
+                    axisLabel: {
+                        interval: 0
+                    }
+                },
+                series: [
+                    {
+                        name: '投稿数量',
+                        type: 'bar',
+                        data: top10Ups.map(item => item.投稿数量),
+                        itemStyle: {
+                            color: '#00a1d6'
+                        }
+                    }
+                ]
+            });
+            
+            // 6. 相关性分析图表
+            const correlationChart = echarts.init(document.getElementById('correlationChart'));
+            
+            // 处理相关性数据
+            const indicators = correlationData.map(item => item.index);
+            const correlationMatrix = indicators.map(indicator1 => {
+                return indicators.map(indicator2 => {
+                    const item = correlationData.find(item => item.index === indicator1);
+                    return item ? item[indicator2] || 0 : 0;
+                });
+            });
+            
+            correlationChart.setOption({
+                tooltip: {
+                    position: 'top'
+                },
+                grid: {
+                    left: '3%',
+                    right: '7%',
+                    bottom: '15%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: indicators,
+                    splitArea: {
+                        show: true
+                    },
+                    axisLabel: {
+                        interval: 0,
+                        rotate: 45
+                    }
+                },
+                yAxis: {
+                    type: 'category',
+                    data: indicators,
+                    splitArea: {
+                        show: true
+                    }
+                },
+                visualMap: {
+                    min: -1,
+                    max: 1,
+                    calculable: true,
+                    orient: 'horizontal',
+                    left: 'center',
+                    bottom: '0%',
+                    inRange: {
+                        color: ['#f25d8e', '#ffffff', '#00a1d6']
+                    }
+                },
+                series: [
+                    {
+                        name: '相关性',
+                        type: 'heatmap',
+                        data: indicators.flatMap((indicator1, i) => {
+                            return indicators.map((indicator2, j) => {
+                                return [i, j, correlationMatrix[i][j]];
+                            });
+                        }),
+                        label: {
+                            show: true,
+                            formatter: function(params) {
+                                return params.data[2].toFixed(2);
+                            }
+                        },
+                        emphasis: {
+                            itemStyle: {
+                                shadowBlur: 10,
+                                shadowColor: 'rgba(0, 0, 0, 0.5)'
+                            }
+                        }
+                    }
+                ]
+            });
+            
+            // 窗口大小变化时重新调整图表大小
+            window.addEventListener('resize', function() {
+                viewDistributionChart.resize();
+                hourDistributionChart.resize();
+                interactionChart.resize();
+                upStatsChart.resize();
+                correlationChart.resize();
+            });
+        }).catch(error => {
+            console.error('加载数据失败:', error);
+            document.getElementById('lastUpdate').textContent = '数据加载失败，请检查JSON文件是否存在';
+        });
+    </script>
+</body>
+</html>
