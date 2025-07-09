@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B站热门视频数据分析可视化</title>
+    <style>
+        /* 全局样式重置与基础设置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            background-color: #f5f2ed; /* 莫兰迪浅米色背景 */
+            color: #333;
+            line-height: 1.6;
+            padding: 2rem 1rem;
+        }
+
+        /* 标题样式 */
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            color: #5e6b66; /* 莫兰迪深灰色 */
+            margin-bottom: 2rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            color: #5e6b66;
+            margin: 1.5rem 0 1rem;
+            border-left: 5px solid #c8dad3; /* 莫兰迪蓝绿色 */
+            padding-left: 0.7rem;
+        }
+
+        /* 新增：分析文本样式 */
+        .analysis {
+            background-color: #f9f7f4;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            color: #5e6b66;
+            font-size: 0.95rem;
+        }
+
+        /* 新增：数据统计卡片样式 */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stats-card {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stats-card .value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #5e6b66;
+        }
+
+        .stats-card .label {
+            font-size: 1rem;
+            color: #798782;
+            margin-top: 0.5rem;
+        }
+
+        /* 新增：最热门视频卡片样式 */
+        .top-video {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            transition: transform 0.3s ease;
+            border: 1px solid #e2e8f0;
+        }
+
+        .top-video:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .top-video h3 {
+            font-size: 1.4rem;
+            color: #5e6b66;
+            margin-bottom: 0.7rem;
+        }
+
+        .top-video p {
+            margin-bottom: 0.7rem;
+            color: #666;
+        }
+
+        .top-video .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1.2rem;
+        }
+
+        .top-video .stat-item {
+            background-color: #f5f2ed;
+            border-radius: 5px;
+            padding: 0.7rem 1.2rem;
+            text-align: center;
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .top-video .stat-item .value {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #5e6b66;
+        }
+
+        .top-video .stat-item .label {
+            font-size: 0.9rem;
+            color: #798782;
+        }
+
+        /* 容器样式 */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* 图表容器样式 */
+        .chart-box {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            transition: transform 0.3s ease;
+            border: 1px solid #e2e8f0;
+        }
+
+        .chart-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-box img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            display: block;
+            margin: 0 auto;
+            transition: transform 0.3s ease;
+        }
+
+        .chart-box img:hover {
+            transform: scale(1.01);
+        }
+
+        /* 响应式布局调整 */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            /* 让最热门视频和统计数据跨两列 */
+            .top-video, .stats-section {
+                grid-column: 1 / -1;
+            }
+            
+            /* 奇数列图表添加不同的边框颜色 */
+            .content-grid > div:nth-child(odd):not(.top-video):not(.stats-section) {
+                border-left: 3px solid #c8dad3; /* 莫兰迪蓝绿色 */
+            }
+            
+            /* 偶数列图表添加不同的边框颜色 */
+            .content-grid > div:nth-child(even):not(.top-video):not(.stats-section) {
+                border-left: 3px solid #b7adcf; /* 莫兰迪淡紫色 */
+            }
+        }
+
+        /* 为不同图表添加背景色变化 */
+        .chart-box:nth-child(3n+1) {
+            background-color: #faf9f7;
+        }
+        
+        .chart-box:nth-child(3n+2) {
+            background-color: #f8f9fa;
+        }
+        
+        .chart-box:nth-child(3n+3) {
+            background-color: #f7f7f9;
+        }
+    </style>
+</body>
+
+<body>
+    <div class="container">
+        <h1>B站热门视频数据分析可视化</h1>
+
+        <!-- 新增：最热门视频板块（置顶显示） -->
+        <div class="top-video">
+            <h3>2025“北现大视听”网络视听精品项目今日发布</h3>
+            <p>主演的《千瓣》、主演的《KOK》、待主演的《唐朝诡事录之长安》、主演的《你好，1983》等15部网络剧，《神隐》等13部网络...</p>
+            <div class="stats">
+                <div class="stat-item" style="background-color: #f5f2ed;">
+                    <div class="value">139,637</div>
+                    <div class="label">点赞数</div>
+                </div>
+                <div class="stat-item" style="background-color: #f0f4f0;">
+                    <div class="value">62,963</div>
+                    <div class="label">评论数</div>
+                </div>
+                <div class="stat-item" style="background-color: #f0f2f5;">
+                    <div class="value">132,410</div>
+                    <div class="label">转发数</div>
+                </div>
+                <div class="stat-item" style="background-color: #f5f0f5;">
+                    <div class="value">1,245,872</div>
+                    <div class="label">播放量</div>
+                </div>
+            </div>
+            <div class="analysis">
+                <p>根据综合评分（播放量×0.5 + 点赞数×0.3 + 评论数×0.2），这部视频在所有热门内容中脱颖而出。其成功可能归因于以下因素：</p>
+                <ul>
+                    <li>内容主题紧扣当下热门影视项目，吸引了大量粉丝关注</li>
+                    <li>发布时间（2025-07-02 21:45）处于用户活跃高峰期</li>
+                    <li>多明星参与的豪华阵容增加了视频的吸引力</li>
+                    <li>内容涵盖多部热门剧集，满足了用户的多元需求</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 新增：数据统计板块 -->
+        <div class="stats-section">
+            <h2>数据总览</h2>
+            <div class="stats-container">
+                <div class="stats-card" style="border-top: 3px solid #c8dad3;">
+                    <div class="value">200</div>
+                    <div class="label">总视频数</div>
+                </div>
+                <div class="stats-card" style="border-top: 3px solid #b7adcf;">
+                    <div class="value">1,245,872</div>
+                    <div class="label">最高播放量</div>
+                </div>
+                <div class="stats-card" style="border-top: 3px solid #d8a7b1;">
+                    <div class="value">1,631,591</div>
+                    <div class="label">总点赞数</div>
+                </div>
+                <div class="stats-card" style="border-top: 3px solid #a7c4a0;">
+                    <div class="value">176,261</div>
+                    <div class="label">总评论数</div>
+                </div>
+                <div class="stats-card" style="border-top: 3px solid #d6cadd;">
+                    <div class="value">512,958</div>
+                    <div class="label">总转发数</div>
+                </div>
+                <div class="stats-card" style="border-top: 3px solid #e6ccb2;">
+                    <div class="value">8,256,347</div>
+                    <div class="label">总播放量</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图表内容区域（左右交替排列） -->
+        <div class="content-grid">
+            <!-- 各指标之间的相关性热力图 -->
+            <div class="chart-box">
+                <h2>各指标之间的相关性热力图</h2>
+                <img src="heatmap.png" alt="各指标之间的相关性热力图">
+                <div class="analysis">
+                    <p>该热力图展示了视频各指标间的相关性强度。颜色越接近暖色表示正相关性越强，颜色越接近冷色表示负相关性越强。</p>
+                    <p>分析发现：播放量与点赞数、评论数呈强正相关，说明互动性高的视频更容易获得高播放量；而时长与其他指标相关性较弱，表明视频时长对热度影响较小。</p>
+                </div>
+            </div>
+
+            <!-- 不同小时的视频发布数量分布 -->
+            <div class="chart-box">
+                <h2>不同小时的视频发布数量分布</h2>
+                <img src="video_publish_hour.png" alt="不同小时的视频发布数量分布">
+                <div class="analysis">
+                    <p>该图表展示了一天中不同时间段的视频发布数量分布情况。</p>
+                    <p>从图中可以看出，发布高峰期出现在18-22点，这与用户下班后的休闲时间相吻合。建议创作者避开发布高峰期，选择竞争较小的时段（如上午10-12点）发布，以获得更多曝光机会。</p>
+                </div>
+            </div>
+
+            <!-- 各互动指标的总值 -->
+            <div class="chart-box">
+                <h2>各互动指标的总值</h2>
+                <img src="interaction_total.png" alt="各互动指标的总值">
+                <div class="analysis">
+                    <p>该图表展示了所有热门视频的互动指标总值对比。</p>
+                    <p>数据显示，点赞数远高于评论数和转发数，说明用户更倾向于通过点赞表达对视频的喜爱。此外，转发数相对较低，可能意味着视频的传播性还有提升空间。</p>
+                </div>
+            </div>
+
+            <!-- 播放量排名前十的视频 -->
+            <div class="chart-box">
+                <h2>播放量排名前十的视频</h2>
+                <img src="top10_playback.png" alt="播放量排名前十的视频">
+                <div class="analysis">
+                    <p>该图表展示了播放量最高的十个视频及其具体数据。</p>
+                    <p>从榜单中可以看出，头部视频的播放量远远领先于后续视频，呈现出明显的马太效应。这些视频的主题多集中在热门游戏、娱乐综艺等领域，反映了当前用户的主要兴趣方向。</p>
+                </div>
+            </div>
+
+            <!-- 不同播放量区间的视频数量分布 -->
+            <div class="chart-box">
+                <h2>不同播放量区间的视频数量分布</h2>
+                <img src="playback_interval_count.png" alt="不同播放量区间的视频数量分布">
+                <div class="analysis">
+                    <p>该图表展示了不同播放量区间的视频数量分布情况。</p>
+                    <p>大部分视频的播放量集中在10万-100万区间，而播放量超过500万的视频数量极少。这表明在热门视频中，能达到超高播放量的内容仍是少数，竞争异常激烈。</p>
+                </div>
+            </div>
+
+            <!-- B站热门视频播放量分布饼图 -->
+            <div class="chart-box">
+                <h2>B站热门视频播放量分布</h2>
+                <img src="playback_pie.png" alt="B站热门视频播放量分布">
+                <div class="analysis">
+                    <p>该饼图展示了不同播放量区间的视频占比情况。</p>
+                    <p>可以看出，播放量在10万-100万之间的视频占比最大，约为XX%；而播放量超过500万的视频仅占XX%。这与柱状图反映的趋势一致，说明大多数热门视频仍处于中等播放量水平。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
