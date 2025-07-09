@@ -1,0 +1,369 @@
+import requests
+import csv
+from datetime import datetime
+import time
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
+from jinja2 import Template
+plt.rcParams['font.sans-serif'] = ['SimHei']  
+plt.rcParams['axes.unicode_minus'] = False 
+def get_bilibili_hot_videos(pages=5):
+    """爬取Bilibili热门视频数据"""
+    all_videos = []
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Referer": "https://www.bilibili.com/"
+    }
+    
+    for page in range(1, pages + 1):
+        url = f"https://api.bilibili.com/x/web-interface/popular?ps=20&pn={page}"
+        
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            
+            if data.get("code") == 0:
+                all_videos.extend(data["data"]["list"])
+                print(f"已获取第 {page} 页数据，共 {len(data['data']['list'])} 条")
+            else:
+                print(f"第 {page} 页获取数据失败: {data.get('message')}")
+            
+            time.sleep(1)
+            
+        except requests.exceptions.RequestException as e:
+            print(f"第 {page} 页请求出错: {e}")
+    
+    return all_videos[:100]  # 确保只返回100条
+
+def get_region_name(tid):
+    """根据tid获取地区/分区名称"""
+    region_map = {
+        1: "动画", 3: "音乐", 4: "游戏", 5: "娱乐", 11: "电视剧", 
+        13: "纪录片", 23: "电影", 36: "知识", 119: "鬼畜", 129: "舞蹈",
+        160: "生活", 165: "动物圈", 167: "国创", 177: "科学科普",
+        181: "影视", 188: "数码", 234: "运动", 223: "汽车"
+    }
+    return region_map.get(tid, f"未知分区({tid})")
+
+def save_to_csv(data, filename):
+    """保存数据到CSV文件"""
+    if not data:
+        print("无数据可保存")
+        return
+    
+    fields = [
+        '排名', '标题', 'UP主', '分区', '播放量', '弹幕数', '点赞数', '收藏数', '硬币数', 
+        '分享数', '评论数', '时长(秒)', '发布时间', '视频链接'
+    ]
+    
+    try:
+        with open(filename, 'w', newline='', encoding='utf-8-sig') as f:
+            writer = csv.DictWriter(f, fieldnames=fields)
+            writer.writeheader()
+            
+            for idx, video in enumerate(data, 1):
+                writer.writerow({
+                    '排名': idx,
+                    '标题': video['title'],
+                    'UP主': video['owner']['name'],
+                    '分区': get_region_name(video['tid']),
+                    '播放量': video['stat']['view'],
+                    '弹幕数': video['stat']['danmaku'],
+                    '点赞数': video['stat']['like'],
+                    '收藏数': video['stat']['favorite'],
+                    '硬币数': video['stat']['coin'],
+                    '分享数': video['stat']['share'],
+                    '评论数': video['stat']['reply'],
+                    '时长(秒)': video['duration'],
+                    '发布时间': datetime.fromtimestamp(video['pubdate']).strftime('%Y-%m-%d %H:%M:%S'),
+                    '视频链接': f"https://www.bilibili.com/video/{video['bvid']}"
+                })
+        
+        print(f"数据已保存到 {filename}，共 {len(data)} 条记录")
+        return filename
+        
+    except Exception as e:
+        print(f"保存CSV文件出错: {e}")
+        return None
+
+def create_visualizations(df, output_dir='.'):
+    """创建3个可视化图表并保存为图片"""
+    # 设置中文字体
+    try:
+        font = FontProperties(fname='simhei.ttf', size=12)
+    except:
+        font = FontProperties(family='sans-serif', size=12)
+    
+    plt.style.use('ggplot')
+    
+    # 图表1: 各分区视频数量TOP10
+    plt.figure(figsize=(10, 6))
+    region_counts = df['分区'].value_counts().head(10)
+    region_counts.plot(kind='barh', color='#FB7299')
+    plt.title('B站热门视频分区分布TOP10', fontproperties=font)
+    plt.xlabel('视频数量', fontproperties=font)
+    plt.ylabel('分区名称', fontproperties=font)
+    plt.tight_layout()
+    chart1_path = f"{output_dir}/region_distribution.png"
+    plt.savefig(chart1_path, dpi=100, bbox_inches='tight')
+    plt.close()
+    
+    # 图表2: 播放量、点赞数、收藏数关系散点图
+    plt.figure(figsize=(10, 6))
+    plt.scatter(df['播放量'], df['点赞数'], s=df['收藏数']/1000, 
+                alpha=0.6, color='#23ADE5', edgecolors='white')
+    plt.title('播放量、点赞数与收藏数关系', fontproperties=font)
+    plt.xlabel('播放量', fontproperties=font)
+    plt.ylabel('点赞数', fontproperties=font)
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.grid(True, which="both", ls="--")
+    plt.tight_layout()
+    chart2_path = f"{output_dir}/metrics_relation.png"
+    plt.savefig(chart2_path, dpi=100, bbox_inches='tight')
+    plt.close()
+    
+    # 图表3: 各指标TOP10视频
+    metrics = ['播放量', '点赞数', '收藏数', '评论数']
+    top_videos = {}
+    for metric in metrics:
+        top = df.nlargest(1, metric)
+        title = top['标题'].values[0][:15] + '...' if len(top['标题'].values[0]) > 15 else top['标题'].values[0]
+        top_videos[metric] = {
+            '标题': title,
+            'UP主': top['UP主'].values[0],
+            '值': format(top[metric].values[0], ','),
+            '分区': top['分区'].values[0]
+        }
+    
+    return chart1_path, chart2_path, top_videos
+
+def generate_html_report(csv_file, chart1, chart2, top_videos, output_file='bilibili_report.html'):
+    """生成HTML报告"""
+    # 读取CSV数据
+    df = pd.read_csv(csv_file)
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    total_videos = len(df)
+    
+    # 准备数据表格内容
+    table_data = df.head(10).to_dict('records')
+    
+    # HTML模板
+    html_template = """
+    <!DOCTYPE html>
+    <html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>B站热门视频分析报告</title>
+        <style>
+            body {
+                font-family: 'Microsoft YaHei', sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f5f5f5;
+            }
+            .header {
+                background-color: #FB7299;
+                color: white;
+                padding: 20px;
+                border-radius: 5px;
+                text-align: center;
+                margin-bottom: 30px;
+            }
+            .section {
+                background-color: white;
+                padding: 20px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+            h1, h2, h3 {
+                color: #FB7299;
+            }
+            .charts {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-between;
+            }
+            .chart {
+                flex-basis: 48%;
+                margin-bottom: 20px;
+            }
+            .chart img {
+                width: 100%;
+                height: auto;
+                border-radius: 5px;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 20px 0;
+            }
+            th, td {
+                padding: 12px 15px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+            }
+            th {
+                background-color: #FB7299;
+                color: white;
+            }
+            tr:hover {
+                background-color: #f5f5f5;
+            }
+            .top-videos {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-between;
+            }
+            .video-card {
+                flex-basis: 23%;
+                background-color: #f9f9f9;
+                padding: 15px;
+                border-radius: 5px;
+                margin-bottom: 15px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            }
+            .video-card h4 {
+                margin-top: 0;
+                color: #23ADE5;
+            }
+            .footer {
+                text-align: center;
+                margin-top: 30px;
+                color: #777;
+                font-size: 0.9em;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>B站热门视频分析报告</h1>
+            <p>生成时间：{{ current_time }} | 分析视频总数：{{ total_videos }}条</p>
+        </div>
+        
+        <div class="section">
+            <h2>数据概览</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>排名</th>
+                        <th>标题</th>
+                        <th>UP主</th>
+                        <th>分区</th>
+                        <th>播放量</th>
+                        <th>点赞数</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in table_data %}
+                    <tr>
+                        <td>{{ row['排名'] }}</td>
+                        <td>{{ row['标题'] }}</td>
+                        <td>{{ row['UP主'] }}</td>
+                        <td>{{ row['分区'] }}</td>
+                        <td>{{ "{:,}".format(row['播放量']) }}</td>
+                        <td>{{ "{:,}".format(row['点赞数']) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="section">
+            <h2>数据分析</h2>
+            <div class="charts">
+                <div class="chart">
+                    <h3>热门视频分区分布TOP10</h3>
+                    <img src="{{ chart1 }}" alt="分区分布图">
+                </div>
+                <div class="chart">
+                    <h3>播放量、点赞数与收藏数关系</h3>
+                    <img src="{{ chart2 }}" alt="指标关系图">
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>热门视频TOP1</h2>
+            <div class="top-videos">
+                {% for metric, data in top_videos.items() %}
+                <div class="video-card">
+                    <h4>{{ metric }}最高</h4>
+                    <p><strong>标题:</strong> {{ data['标题'] }}</p>
+                    <p><strong>UP主:</strong> {{ data['UP主'] }}</p>
+                    <p><strong>数值:</strong> {{ data['值'] }}</p>
+                    <p><strong>分区:</strong> {{ data['分区'] }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>本报告由Python自动生成 | 数据来源: Bilibili热门视频API</p>
+        </div>
+    </body>
+    </html>
+    """
+    
+    # 渲染模板
+    template = Template(html_template)
+    html_content = template.render(
+        current_time=current_time,
+        total_videos=total_videos,
+        table_data=table_data,
+        chart1=chart1,
+        chart2=chart2,
+        top_videos=top_videos
+    )
+    
+    # 保存HTML文件
+    with open(output_file, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+    
+    print(f"HTML报告已生成: {output_file}")
+    return output_file
+
+def main():
+    print("开始爬取Bilibili热门视频数据...")
+    start_time = datetime.now()
+    
+    # 获取100条热门视频数据
+    hot_videos = get_bilibili_hot_videos(pages=5)
+    
+    if not hot_videos:
+        print("未能获取热门视频数据")
+        return
+    
+    print(f"\n数据获取完成，共获取 {len(hot_videos)} 条热门视频数据")
+    print(f"耗时: {(datetime.now() - start_time).total_seconds():.2f}秒")
+    
+    # 保存为CSV
+    csv_filename = f"bilibili_hot_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    csv_file = save_to_csv(hot_videos, csv_filename)
+    
+    if not csv_file:
+        return
+    
+    # 读取CSV数据进行可视化
+    df = pd.read_csv(csv_file)
+    
+    # 创建可视化图表
+    chart1, chart2, top_videos = create_visualizations(df)
+    
+    # 生成HTML报告
+    html_report = generate_html_report(csv_file, chart1, chart2, top_videos)
+    
+    print("\n=== 执行完成 ===")
+    print(f"CSV文件: {csv_file}")
+    print(f"HTML报告: {html_report}")
+
+if __name__ == "__main__":
+    main()
