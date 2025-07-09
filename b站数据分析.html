@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B站热门视频数据分析</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+
+        h1,
+        h2 {
+            text-align: center;
+        }
+
+        .chart-img {
+            display: block;
+            margin: 0 auto;
+            max-width: 80%;
+            height: auto;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>B站热门视频数据分析</h1>
+
+    <!-- 相关性热力图模块 -->
+    <h2>各指标之间的相关性热力图分析</h2>
+    <img src="heatmap.png" alt="相关性热力图" class="chart-img">
+
+    <!-- 视频发布时间分布模块 -->
+    <h2>不同小时的视频发布数量分布分析</h2>
+    <img src="publish_time.png" alt="视频发布时间分布" class="chart-img">
+
+    <!-- 互动指标总值模块 -->
+    <h2>各互动指标的总值分析</h2>
+    <img src="interaction_total.png" alt="互动指标总值" class="chart-img">
+
+    <!-- 播放量分布饼图模块 -->
+    <h2>B站热门视频播放量分布分析</h2>
+    <img src="playback_pie.png" alt="播放量分布饼图" class="chart-img">
+
+    <!-- 播放量排名前十模块 -->
+    <h2>播放量排名前十的视频分析</h2>
+    <img src="top10_playback.png" alt="播放量排名前十" class="chart-img">
+
+    <!-- 不同播放量区间数量分布模块 -->
+    <h2>不同播放量区间的视频数量分布分析</h2>
+    <img src="playback_interval.png" alt="不同播放量区间数量分布" class="chart-img">
+
+</body>
+
+</html>
