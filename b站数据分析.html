@@ -2,58 +2,196 @@
 <html lang="zh-CN">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>B站热门视频数据分析</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            line-height: 1.6;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>微博数据分析可视化</title>
+  <style>
+    /* 全局样式重置与基础设置 */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-        h1,
-        h2 {
-            text-align: center;
-        }
+    body {
+      font-family: "Microsoft YaHei", sans-serif;
+      background-color: #f5f2ed; /* 莫兰迪浅底色 */
+      color: #333;
+      line-height: 1.6;
+    }
 
-        .chart-img {
-            display: block;
-            margin: 0 auto;
-            max-width: 80%;
-            height: auto;
-            margin-bottom: 30px;
-        }
-    </style>
+    /* 头部区域样式 */
+    .header {
+      background-color: #c8dad3; /* 莫兰迪蓝绿色系 */
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 2rem;
+      font-weight: 600;
+      color: #5e6b66;
+    }
+
+    .header p {
+      margin-top: 0.5rem;
+      color: #798782;
+    }
+
+    /* 统计卡片区域 */
+    .stats-card {
+      max-width: 1200px;
+      margin: -2rem auto 2rem; /* 向上负 margin 营造悬浮感 */
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.5rem;
+      padding: 0 1rem;
+    }
+
+    .card-item {
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      flex: 1 1 200px;
+      min-width: 200px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .card-item h3 {
+      font-size: 1rem;
+      color: #798782;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-item .num {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #5e6b66;
+    }
+
+    /* 内容容器 */
+    .content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+
+    /* 热门微博模块 */
+    .hot-weibo {
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .hot-weibo h2 {
+      font-size: 1.2rem;
+      color: #5e6b66;
+      margin-bottom: 1rem;
+      border-left: 4px solid #c8dad3;
+      padding-left: 0.5rem;
+    }
+
+    .hot-weibo p {
+      line-height: 1.8;
+      color: #666;
+    }
+
+    /* 图表区域布局 */
+    .chart-wrap {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (min-width: 768px) {
+      .chart-wrap {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .chart-item {
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .chart-item h2 {
+      font-size: 1.2rem;
+      color: #5e6b66;
+      margin-bottom: 1rem;
+      border-left: 4px solid #c8dad3;
+      padding-left: 0.5rem;
+      align-self: flex-start;
+    }
+
+    .chart-item img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+  </style>
 </head>
 
 <body>
-    <h1>B站热门视频数据分析</h1>
+  <!-- 头部区域 -->
+  <section class="header">
+    <h1>微博数据分析可视化</h1>
+    <p>基于爬取的微博数据进行多维度可视化展示</p>
+  </section>
 
-    <!-- 相关性热力图模块 -->
-    <h2>各指标之间的相关性热力图分析</h2>
-    <img src="heatmap.png" alt="相关性热力图" class="chart-img">
+  <!-- 统计卡片区域 -->
+  <section class="stats-card">
+    <div class="card-item">
+      <h3>总微博数</h3>
+      <div class="num">200</div>
+    </div>
+    <div class="card-item">
+      <h3>总转发数</h3>
+      <div class="num">512958</div>
+    </div>
+    <div class="card-item">
+      <h3>总评论数</h3>
+      <div class="num">176261</div>
+    </div>
+    <div class="card-item">
+      <h3>总点赞数</h3>
+      <div class="num">1631591</div>
+    </div>
+  </section>
 
-    <!-- 视频发布时间分布模块 -->
-    <h2>不同小时的视频发布数量分布分析</h2>
-    <img src="publish_time.png" alt="视频发布时间分布" class="chart-img">
+  <!-- 主要内容容器 -->
+  <section class="content">
+    <!-- 热门微博模块 -->
+    <div class="hot-weibo">
+      <h2>最热门微博</h2>
+      <p>2025“北现大视听” 网络视听精品项目今日发布，主演的《千瓣》、主演的《KOK》、 待主演的《唐朝诡事录之长安》、主演的《你好，1983》等15部网络剧，《神隐》等13部网络...全文</p>
+      <p>转：13241 | 评：62963 | 赞：139637 | 发布时间：2025-07-02 21:45</p>
+    </div>
 
-    <!-- 互动指标总值模块 -->
-    <h2>各互动指标的总值分析</h2>
-    <img src="interaction_total.png" alt="互动指标总值" class="chart-img">
-
-    <!-- 播放量分布饼图模块 -->
-    <h2>B站热门视频播放量分布分析</h2>
-    <img src="playback_pie.png" alt="播放量分布饼图" class="chart-img">
-
-    <!-- 播放量排名前十模块 -->
-    <h2>播放量排名前十的视频分析</h2>
-    <img src="top10_playback.png" alt="播放量排名前十" class="chart-img">
-
-    <!-- 不同播放量区间数量分布模块 -->
-    <h2>不同播放量区间的视频数量分布分析</h2>
-    <img src="playback_interval.png" alt="不同播放量区间数量分布" class="chart-img">
-
+    <!-- 图表区域 -->
+    <div class="chart-wrap">
+      <div class="chart-item">
+        <h2>微博发布频率趋势（按日）</h2>
+        <!-- 替换为实际图表路径 -->
+        <img src="chart1.png" alt="微博发布频率趋势"> 
+      </div>
+      <div class="chart-item">
+        <h2>一天中不同小时的微博发布数量</h2>
+        <!-- 替换为实际图表路径 -->
+        <img src="chart2.png" alt="小时发布数量分布"> 
+      </div>
+    </div>
+  </section>
 </body>
 
 </html>
